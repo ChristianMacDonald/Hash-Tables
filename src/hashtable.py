@@ -110,14 +110,17 @@ class HashTable:
 
         Fill this in.
         '''
-        if self.storage[self._hash_mod(key)] is None:
-            return None
-        else:
-            current_pair = self.storage[self._hash_mod(key)]
-            while current_pair is not None:
+        current_pair = self.storage[self._hash_mod(key)]
+        if current_pair:
+            while True:
                 if current_pair.key == key:
                     return current_pair.value
-                current_pair = current_pair.next
+                else:
+                    if current_pair.next:
+                        current_pair = current_pair.next
+                    else:
+                        return None
+        else:
             return None
 
 
@@ -131,9 +134,9 @@ class HashTable:
         old_storage = self.storage
         self.__init__(self.capacity * 2)
         for pair in old_storage:
-            if pair is not None:
+            if pair:
                 current_pair = pair
-                while current_pair is not None:
+                while current_pair:
                     self.insert(current_pair.key, current_pair.value)
                     current_pair = current_pair.next
 
