@@ -34,7 +34,10 @@ class HashTable:
 
         OPTIONAL STRETCH: Research and implement DJB2
         '''
-        pass
+        hashed_key = 5381
+        for char in key:
+            hashed_key = (hashed_key << 5) + hashed_key + ord(char)
+        return hashed_key
 
 
     def _hash_mod(self, key):
@@ -42,7 +45,18 @@ class HashTable:
         Take an arbitrary key and return a valid integer index
         within the storage capacity of the hash table.
         '''
-        return self._hash(key) % self.capacity
+        return self._hash_djb2(key) % self.capacity
+    
+    def _load_factor(self):
+        total_keys = 0
+        for pair in self.storage:
+            if pair:
+                current_pair = pair
+                while current_pair:
+                    total_keys += 1
+                    current_pair = current_pair.next
+        return total_keys / self.capacity
+
 
 
     def insert(self, key, value):
@@ -67,9 +81,13 @@ class HashTable:
                         current_pair = current_pair.next
                     else:
                         current_pair.next = LinkedPair(key, value)
+                        if self._load_factor() > 0.7:
+                            self.resize()
                         break
         else:
             self.storage[self._hash_mod(key)] = LinkedPair(key, value)
+            if self._load_factor() > 0.7:
+                self.resize()
 
 
 
@@ -86,10 +104,14 @@ class HashTable:
         if current_pair:
             if current_pair.key == key:
                 self.storage[self._hash_mod(key)] = current_pair.next
+                if self._load_factor() < 0.2:
+                    self.resize(expand=False)
             else:
                 while True:
                     if current_pair.next.key == key:
                         current_pair.next = current_pair.next.next
+                        if self._load_factor() < 0.2:
+                            self.resize(expand=False)
                         break
                     else:
                         if current_pair.next.next:
@@ -124,7 +146,7 @@ class HashTable:
             return None
 
 
-    def resize(self):
+    def resize(self, expand=True):
         '''
         Doubles the capacity of the hash table and
         rehash all key/value pairs.
@@ -132,7 +154,10 @@ class HashTable:
         Fill this in.
         '''
         old_storage = self.storage
-        self.__init__(self.capacity * 2)
+        if expand:
+            self.__init__(self.capacity * 2)
+        else:
+            self.__init__(self.capacity // 2)
         for pair in old_storage:
             if pair:
                 current_pair = pair
